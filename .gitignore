@@ -1,7 +1,6 @@
 node_modules/
 build/
-# dist/ is commented out for Amvera to copy built files from build to run phase.
-# dist/
+dist/
 coverage/
 .DS_Store
 *.log
