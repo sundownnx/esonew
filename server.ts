@@ -559,8 +559,8 @@ References standard clinical books or journals that back up this advice, reassur
 // Bootstrapping Server/Vite
 const isProduction =
   process.env.NODE_ENV === "production" ||
-  (typeof __filename !== 'undefined' && __filename.includes('dist')) ||
-  (process.argv[1] && process.argv[1].includes('dist')) ||
+  (typeof __filename !== 'undefined' && (__filename.endsWith('server.cjs') || __filename.includes('dist'))) ||
+  (process.argv[1] && (process.argv[1].endsWith('server.cjs') || process.argv[1].includes('dist'))) ||
   !fs.existsSync(path.join(process.cwd(), 'server.ts'));
 
 async function run() {
@@ -592,7 +592,9 @@ async function run() {
       }
     });
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = fs.existsSync(path.join(process.cwd(), 'dist'))
+      ? path.join(process.cwd(), 'dist')
+      : process.cwd();
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
