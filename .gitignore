@@ -1,6 +1,7 @@
 node_modules/
-build/
-dist/
+# dist and build are commented out so Amvera doesn't delete compiled files before running
+# build/
+# dist/
 coverage/
 .DS_Store
 *.log
