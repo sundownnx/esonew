@@ -1,0 +1,6 @@
+{
+  "name": "EuroSecondOpinion",
+  "description": "European medical second opinion platform with Gemini AI consultation generator and integrated video calls.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

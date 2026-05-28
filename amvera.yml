@@ -1,0 +1,14 @@
+meta:
+  environment: node
+  toolchain:
+    name: npm
+    version: 20
+
+build:
+  commands:
+    - npm install --legacy-peer-deps
+    - npm run build
+
+run:
+  command: npm start
+  containerPort: 3000

@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background-color: #F3F7F5;
+  color: #1A3025;
+  font-family: var(--font-sans);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(0, 82, 50, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(0, 0, 0, 0.02) 0px, transparent 50%);
+}
+
+/* Custom modern input borders and scrollbar configurations for a premium workspace */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3F7F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #BDD1C6;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #004F2D;
+}
+
+::selection {
+  background-color: rgba(0, 79, 45, 0.15);
+  color: #004F2D;
+}
