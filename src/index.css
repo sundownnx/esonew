@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
@@ -10,10 +10,112 @@ body {
   background-color: #F3F7F5;
   color: #1A3025;
   font-family: var(--font-sans);
+  font-weight: 600; /* Increased font weight by default (bolder and stylized) */
   background-image: 
     radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.04) 0px, transparent 50%),
     radial-gradient(at 50% 0%, rgba(0, 82, 50, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(0, 0, 0, 0.02) 0px, transparent 50%);
+  transition: background-color 0.25s ease, color 0.15s ease, border-color 0.2s ease;
+}
+
+/* Global inputs and buttons default weights to look rich and bold */
+input, textarea, select, button {
+  font-weight: 600; /* Bolder style for interactive elements */
+}
+
+/* Ensure placeholder contrast is solid */
+::placeholder {
+  color: #7A8E81 !important;
+  font-weight: 600;
+}
+
+strong, h1, h2, h3, h4, h5, h6 {
+  font-weight: 800 !important; /* Thick display headings for modern editorial feel */
+}
+
+/* Custom dark theme body background */
+body.dark-mode {
+  background-color: #08100B !important;
+  color: #E6F3EC !important;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(0, 150, 90, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 255, 255, 0.01) 0px, transparent 50%);
+}
+
+/* COMPREHENSIVE DARK MODE OVERRIDES */
+body.dark-mode .bg-white,
+body.dark-mode [class*="bg-white"],
+body.dark-mode .bg-white\/50,
+body.dark-mode .bg-white\/80 {
+  background-color: #101b15 !important;
+  color: #E6F3EC !important;
+  border-color: #22392b !important;
+}
+
+body.dark-mode .bg-\[\#F4F8F6\],
+body.dark-mode .bg-\[\#F8FAF9\],
+body.dark-mode .bg-\[\#F4F8F6\]\/60,
+body.dark-mode .bg-\[\#F4F8F6\]\/30,
+body.dark-mode .bg-\[\#F4F8F6\]\/40 {
+  background-color: #15241c !important;
+  color: #E6F3EC !important;
+  border-color: #253e2f !important;
+}
+
+body.dark-mode .text-\[\#1A3025\] {
+  color: #ffffff !important;
+}
+
+body.dark-mode .text-\[\#004F2D\],
+body.dark-mode .text-\[\#004F2D\]\/60 {
+  color: #D4AF37 !important;
+}
+
+body.dark-mode .text-\[\#4B5E53\] {
+  color: #BDD1C6 !important;
+}
+
+body.dark-mode .hover\:bg-\[\#F4F8F6\]\/30:hover {
+  background-color: rgba(21, 36, 28, 0.6) !important;
+}
+
+body.dark-mode .hover\:bg-\[\#F4F8F6\]\/40:hover {
+  background-color: rgba(21, 36, 28, 0.6) !important;
+}
+
+body.dark-mode .text-gray-400,
+body.dark-mode .text-gray-500,
+body.dark-mode .text-gray-600 {
+  color: #9cb0a4 !important;
+}
+
+body.dark-mode .border-\[\#BDD1C6\],
+body.dark-mode .border-\[\#BDD1C6\]\/60,
+body.dark-mode .border-\[\#BDD1C6\]\/70,
+body.dark-mode .border-\[\#BDD1C6\]\/80,
+body.dark-mode .border-\[\#E1EDE6\],
+body.dark-mode .border-gray-200,
+body.dark-mode .border-gray-300 {
+  border-color: #22392b !important;
+}
+
+body.dark-mode select option {
+  background-color: #101b15 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #15241c !important;
+  color: #ffffff !important;
+  border-color: #22392b !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #536b5c !important;
 }
 
 /* Custom modern input borders and scrollbar configurations for a premium workspace */
@@ -26,16 +128,29 @@ body {
   background: #F3F7F5;
 }
 
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #0d1712 !important;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #BDD1C6;
   border-radius: 4px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #254030 !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #004F2D;
 }
 
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37 !important;
+}
+
 ::selection {
   background-color: rgba(0, 79, 45, 0.15);
   color: #004F2D;
 }
+

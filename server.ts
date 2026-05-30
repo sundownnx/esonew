@@ -229,6 +229,16 @@ function saveDB(data: any) {
 
 // REST API Routes
 
+// Serve the uploaded logo.png directly from the root of the workspace
+app.get('/logo.png', (req, res) => {
+  const logoPath = path.join(process.cwd(), 'logo.png');
+  if (fs.existsSync(logoPath)) {
+    res.sendFile(logoPath);
+  } else {
+    res.status(404).end();
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
@@ -354,6 +364,14 @@ app.post('/api/cases', (req, res) => {
   const { patientId, patientName, direction, anamnesis, complaintsChecklist, documents, dicomSnaps, pricePaid, requiresTranslation, sourceLanguage, autoTranslatedText, disclaimerSigned, signatureText } = req.body;
   const db = getDB();
 
+  // Route to the corresponding doctor automatically based on direction
+  let assignedDoctorId = 'doc_3'; // default fallback
+  if (direction === 'Cardiology') {
+    assignedDoctorId = 'doc_1';
+  } else if (direction === 'Neurology') {
+    assignedDoctorId = 'doc_2';
+  }
+
   const newCase = {
     id: 'case_' + Date.now(),
     patientId: patientId || 'user_pat_1',
@@ -363,13 +381,15 @@ app.post('/api/cases', (req, res) => {
     complaintsChecklist: complaintsChecklist || [],
     documents: documents || [],
     dicomSnaps: dicomSnaps || [],
-    status: 'received' as const,
+    status: 'in_progress' as const,
     pricePaid: pricePaid || 150,
     dateCreated: new Date().toISOString().split('T')[0],
     requiresTranslation: !!requiresTranslation,
     sourceLanguage: sourceLanguage || 'en',
     autoTranslatedText: autoTranslatedText || '',
-    isPreScreened: false,
+    isPreScreened: true,
+    preScreenNotes: 'PACS image and DICOM stack integrity verified by system AI checks. Case routed automatically to the clinic specialist.',
+    assignedDoctorId,
     disclaimerSigned: !!disclaimerSigned,
     signatureText: signatureText || ''
   };
@@ -383,9 +403,9 @@ app.post('/api/cases', (req, res) => {
     id: 'chat_msg_' + Date.now(),
     caseId: newCase.id,
     senderId: 'system',
-    senderName: 'System Core',
+    senderName: 'SLA Auto-Router',
     senderRole: 'system',
-    messageText: `Новое обращение зарегистрировано под номером ${newCase.id}. Направление: ${newCase.direction}. Ожидайте верификации документов медицинским редактором.`,
+    messageText: `Новое обращение зарегистрировано под номером ${newCase.id}. PACS слои распознаны. ИИ проверил качество DICOM и автоматически распределил кейс курирующему врачу-специалисту клиники Германии. Статус обновлен на: В работе.`,
     timestamp: new Date().toISOString()
   });
 

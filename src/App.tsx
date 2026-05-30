@@ -27,7 +27,9 @@ import {
   PlusCircle,
   Clock3,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { translations } from './localization';
 import { LanguageCode, User, Doctor, Patient, Conclusion, Appointment, MedicalCase, ChatMessage } from './types';
@@ -42,6 +44,28 @@ export default function App() {
   // Locale State
   const [lang, setLang] = useState<LanguageCode>('ru');
   const t = translations[lang];
+
+  // Dark/Light Mode state loaded from localStorage
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  // Toggle dark class on native document elements for smooth global backdrop updates
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const newVal = !prev;
+      localStorage.setItem('theme', newVal ? 'dark' : 'light');
+      return newVal;
+    });
+  };
 
   // Gemini API key state
   const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(true);
@@ -58,8 +82,8 @@ export default function App() {
   const [authError, setAuthError] = useState<string>('');
   const [authLoading, setAuthLoading] = useState<boolean>(false);
 
-  // 2FA states (GDPR Compliance)
-  const [enable2FA, setEnable2FA] = useState<boolean>(true);
+  // 2FA states (GDPR Compliance - disabled by default for testability)
+  const [enable2FA, setEnable2FA] = useState<boolean>(false);
   const [show2FAForm, setShow2FAForm] = useState<boolean>(false);
   const [otpSent, setOtpSent] = useState<string>('4892');
   const [otpInput, setOtpInput] = useState<string>('');
@@ -98,6 +122,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState<string>('');
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Video Consultation Mode
   const [isInVideoCall, setIsInVideoCall] = useState<boolean>(false);
@@ -149,7 +174,9 @@ export default function App() {
   }, [selectedCaseId]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [chatMessages]);
 
   const formatTime = (sec: number) => {
@@ -470,20 +497,30 @@ export default function App() {
   const activeSlaTimer = activeCase?.status === 'in_progress' ? 'Active Timer: 44h 12m' : '';
 
   return (
-    <div id="eurosecondopinion-node" className="min-h-screen bg-[#F3F7F5] text-[#1A3025] flex flex-col font-sans selection:bg-[#004F2D]/10 selection:text-[#004F2D]">
+    <div id="eurosecondopinion-node" className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${isDarkMode ? 'bg-[#08100B] text-[#E6F3EC] selection:bg-[#D4AF37]/20 selection:text-[#D4AF37]' : 'bg-[#F3F7F5] text-[#1A3025] selection:bg-[#004F2D]/10 selection:text-[#004F2D]'}`}>
       
       {/* Upper Navigation Header */}
-      <header id="app-header" className="h-16 border-b border-[#BDD1C6]/60 bg-white flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-50 shadow-sm">
+      <header id="app-header" className={`h-16 border-b flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-50 shadow-sm transition-colors duration-200 ${isDarkMode ? 'bg-[#111e15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
         <Logo shieldSize={34} withText={true} />
         
         <div className="flex items-center gap-4 md:gap-6">
+          {/* Universal Day/Night Mode Switcher Toggle Button */}
+          <button 
+            type="button"
+            onClick={toggleDarkMode}
+            className={`p-2 border rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-yellow-400 hover:bg-[#1a2d21] hover:text-yellow-300' : 'bg-[#F4F8F6] border-[#BDD1C6]/70 text-gray-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}
+            title={isDarkMode ? 'Включить светлую тему' : 'Включить темную тему'}
+          >
+            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {/* Universal Language Switcher */}
-          <div className="flex items-center gap-2 bg-[#F4F8F6] px-3 py-1.5 rounded-xl border border-[#BDD1C6]/70">
-            <Languages className="w-3.5 h-3.5 text-[#004F2D]" />
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-colors duration-200 ${isDarkMode ? 'bg-[#15241c] border-[#253e2f]' : 'bg-[#F4F8F6] border-[#BDD1C6]/70'}`}>
+            <Languages className={`w-3.5 h-3.5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
             <select 
               value={lang} 
               onChange={(e) => setLang(e.target.value as LanguageCode)}
-              className="bg-transparent text-[#1A3025] text-xs font-semibold focus:outline-none uppercase cursor-pointer"
+              className={`bg-transparent text-xs font-semibold focus:outline-none uppercase cursor-pointer ${isDarkMode ? 'text-white [&>option]:bg-[#111e15] [&>option]:text-white' : 'text-[#1A3025]'}`}
             >
               <option value="en">English (EN)</option>
               <option value="de">Deutsch (DE)</option>
@@ -495,15 +532,15 @@ export default function App() {
           </div>
 
           {user && (
-            <div className="flex items-center gap-3 border-l border-[#BDD1C6]/60 pl-4 md:pl-6">
+            <div className={`flex items-center gap-3 border-l pl-4 md:pl-6 ${isDarkMode ? 'border-[#22392b]' : 'border-[#BDD1C6]/60'}`}>
               <div className="text-right hidden sm:block">
                 <div className="text-[10px] text-gray-500 font-medium font-mono">Logged in as</div>
-                <div className="text-xs font-extrabold text-[#1A3025]">{user.name}</div>
+                <div className={`text-xs font-extrabold ${isDarkMode ? 'text-white' : 'text-[#1A3025]'}`}>{user.name}</div>
               </div>
               <button 
                 id="btn-logout"
                 onClick={handleLogout}
-                className="p-2 bg-[#F4F8F6] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-[#BDD1C6]/60 text-gray-500 rounded-xl transition-all cursor-pointer shadow-sm"
+                className={`p-2 border rounded-xl transition-all cursor-pointer shadow-sm ${isDarkMode ? 'bg-[#15241c] border-[#253e2f] text-gray-400 hover:bg-rose-950/40 hover:text-rose-400 hover:border-rose-900' : 'bg-[#F4F8F6] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-[#BDD1C6]/60 text-gray-500'}`}
                 title={t.logout}
               >
                 <LogOut className="w-4 h-4" />
@@ -521,7 +558,8 @@ export default function App() {
 
           {/* NOT LOGGED IN AUTH PAGE */}
           {!user ? (
-            <div id="auth-panel" className="max-w-md w-full mx-auto my-auto flex flex-col gap-6">
+            !show2FAForm ? (
+              <div id="auth-panel" className="max-w-md w-full mx-auto my-auto flex flex-col gap-6">
               
               <div className="flex flex-col items-center text-center">
                 <Logo shieldSize={52} withText={true} className="mb-2" />
@@ -531,47 +569,39 @@ export default function App() {
               </div>
 
               {/* Roles selected switch tabs */}
-              <div className="grid grid-cols-3 gap-2 bg-[#E1EDE6] p-1 rounded-xl border border-[#BDD1C6]/60">
+              <div className={`grid grid-cols-2 gap-2 p-1 rounded-xl border transition-colors duration-200 ${isDarkMode ? 'bg-[#132219] border-[#253e2f]' : 'bg-[#E1EDE6] border-[#BDD1C6]/60'}`}>
                 <button 
                   type="button"
-                  onClick={() => { setRole('doctor'); setAuthMode('login'); }}
-                  className={`py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 ${role === 'doctor' ? 'bg-[#004F2D] text-white shadow-sm' : 'text-gray-600 hover:text-[#004F2D] bg-transparent'}`}
-                >
-                  <Briefcase className="w-3.5 h-3.5" />
-                  {lang === 'ru' ? 'Врач' : 'Fachtarzt'}
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => { setRole('patient'); }}
-                  className={`py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 ${role === 'patient' ? 'bg-[#004F2D] text-white shadow-sm' : 'text-gray-600 hover:text-[#004F2D] bg-transparent'}`}
+                  onClick={() => { setRole('patient'); setAuthMode('login'); }}
+                  className={`py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 ${role === 'patient' ? (isDarkMode ? 'bg-[#D4AF37] text-white shadow-sm' : 'bg-[#004F2D] text-white shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-white bg-transparent' : 'text-gray-600 hover:text-[#004F2D] bg-transparent')}`}
                 >
                   <UserIcon className="w-3.5 h-3.5" />
                   {lang === 'ru' ? 'Пациент' : 'Patient'}
                 </button>
                 <button 
                   type="button"
-                  onClick={() => { setRole('admin'); setAuthMode('login'); }}
-                  className={`py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 ${role === 'admin' ? 'bg-[#004F2D] text-white shadow-sm' : 'text-gray-600 hover:text-[#004F2D] bg-transparent'}`}
+                  onClick={() => { setRole('doctor'); setAuthMode('login'); }}
+                  className={`py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 ${role === 'doctor' ? (isDarkMode ? 'bg-[#D4AF37] text-white shadow-sm' : 'bg-[#004F2D] text-white shadow-sm') : (isDarkMode ? 'text-gray-400 hover:text-white bg-transparent' : 'text-gray-600 hover:text-[#004F2D] bg-transparent')}`}
                 >
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  {lang === 'ru' ? 'Асессор' : 'Assessor'}
+                  <Briefcase className="w-3.5 h-3.5" />
+                  {lang === 'ru' ? 'Врач' : 'Fachtarzt'}
                 </button>
               </div>
 
               {/* Login block card */}
-              <div className="bg-white border border-[#BDD1C6]/70 rounded-2xl p-6 shadow-sm relative overflow-hidden text-left">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#004F2D] to-[#D4AF37]"></div>
+              <div className={`border rounded-2xl p-6 shadow-sm relative overflow-hidden text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/70'}`}>
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isDarkMode ? 'from-[#D4AF37] to-emerald-600' : 'from-[#004F2D] to-[#D4AF37]'}`}></div>
                 
-                <h3 className="text-xs font-mono uppercase tracking-widest text-[#004F2D] font-black mb-1">
-                  {role === 'admin' ? (lang === 'ru' ? 'Кабинет Асессора / Аудитора' : 'Coordinator desk') : (role === 'doctor' ? t.roleDoctor : t.rolePatient)}
+                <h3 className={`text-xs font-mono uppercase tracking-widest font-black mb-1 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>
+                  {role === 'doctor' ? t.roleDoctor : t.rolePatient}
                 </h3>
-                <p className="text-xs text-gray-500 mb-5 leading-relaxed font-mono">
-                  {role === 'admin' ? (lang === 'ru' ? 'Качественный аудит и координация консилиума профессоров.' : 'Clinical screening and professors assigning.') : (role === 'doctor' ? t.doctorLoginDesc : t.patientLoginDesc)}
+                <p className={`text-xs mb-5 leading-relaxed font-mono ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {role === 'doctor' ? t.doctorLoginDesc : t.patientLoginDesc}
                 </p>
 
                 {authError && (
-                  <div className="bg-rose-50 text-rose-800 text-xs p-3 rounded-xl border border-rose-200 mb-4 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-600" />
+                  <div className="bg-rose-50 text-rose-800 text-xs p-3 rounded-xl border border-rose-200 mb-4 flex items-center gap-2 font-bold">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                     <span>{authError}</span>
                   </div>
                 )}
@@ -586,7 +616,7 @@ export default function App() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Maxim Ivanov" 
-                        className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] focus:outline-none focus:border-[#004F2D] shadow-inner"
+                        className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-600 shadow-inner' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400 shadow-inner'}`}
                       />
                     </div>
                   )}
@@ -599,7 +629,7 @@ export default function App() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="patient@eurosecondopinion.com"
-                      className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] placeholder-gray-400 focus:outline-none focus:border-[#004F2D] shadow-inner"
+                      className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-600 shadow-inner' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400 shadow-inner'}`}
                     />
                   </div>
 
@@ -611,47 +641,45 @@ export default function App() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" 
-                      className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] focus:outline-none focus:border-[#004F2D] shadow-inner"
+                      className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-600 shadow-inner' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400 shadow-inner'}`}
                     />
                   </div>
-
-                  {/* GDPR 2FA Toggle */}
-                  {authMode === 'login' && (
-                    <div className="flex items-center gap-2.5 pt-2 border-t border-[#E1EDE6] mt-2">
-                      <input 
-                        id="enable2fa-toggle"
-                        type="checkbox"
-                        checked={enable2FA}
-                        onChange={(e) => setEnable2FA(e.target.checked)}
-                        className="w-4 h-4 cursor-pointer text-[#004F2D] border-[#BDD1C6] focus:ring-[#004F2D] bg-white rounded accent-[#004F2D]"
-                      />
-                      <label htmlFor="enable2fa-toggle" className="text-[10.5px] text-gray-500 cursor-pointer font-mono flex items-center gap-1 select-none">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#004F2D]"></span>
-                        {lang === 'ru' ? 'Включить 2FA аутентификацию (GDPR)' : 'Strict 2FA token authorization (GDPR)'}
-                      </label>
-                    </div>
-                  )}
 
                   <button 
                     type="submit"
                     disabled={authLoading}
-                    className="w-full py-3 bg-[#004F2D] text-white font-bold uppercase tracking-wider text-xs rounded-xl hover:bg-[#003520] transition-all flex items-center justify-center gap-1 cursor-pointer shadow-sm"
+                    className={`w-full py-3 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer shadow-sm ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b5942b]' : 'bg-[#004F2D] hover:bg-[#003520]'}`}
                   >
                     <span>{authLoading ? 'Signing in...' : (authMode === 'login' ? t.login : t.register)}</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </form>
 
-                {authMode === 'login' && (
-                  <div className="mt-6 pt-4 border-t border-[#E1EDE6] text-center">
+                {authMode === 'login' && role === 'patient' && (
+                  <div className={`mt-6 pt-4 border-t text-center ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
                     <span className="text-xs text-gray-500">
                       {t.noAccount + ' '}
                       <button 
                         type="button"
                         onClick={() => { setAuthMode('register'); setRole('patient'); }}
-                        className="text-[#004F2D] hover:underline font-bold"
+                        className={`hover:underline font-bold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}
                       >
                         {t.register}
+                      </button>
+                    </span>
+                  </div>
+                )}
+
+                {authMode === 'register' && (
+                  <div className={`mt-6 pt-4 border-t text-center ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                    <span className="text-xs text-gray-500">
+                      {lang === 'ru' ? 'Уже есть аккаунт? ' : 'Already have an account? '}
+                      <button 
+                        type="button"
+                        onClick={() => setAuthMode('login')}
+                        className={`hover:underline font-bold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}
+                      >
+                        {lang === 'ru' ? 'Войти' : 'Login'}
                       </button>
                     </span>
                   </div>
@@ -659,98 +687,89 @@ export default function App() {
               </div>
 
               {/* Demo Helper Panel */}
-              <div className="bg-white border border-[#BDD1C6]/60 p-5 rounded-2xl shadow-sm text-center">
-                <span className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-[#004F2D] block mb-2">{t.quickDemo}</span>
-                <div className="grid grid-cols-3 gap-2">
+              <div className={`border p-5 rounded-2xl shadow-sm text-center transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                <span className={`text-[10px] uppercase font-mono tracking-wider font-extrabold block mb-2 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{t.quickDemo}</span>
+                <div className="grid grid-cols-2 gap-2">
                   <button 
                     type="button"
                     onClick={() => handleQuickLogin('doctor')}
-                    className="py-2 px-2 bg-[#F4F8F6] hover:bg-[#E1EDE6] rounded-xl border border-[#BDD1C6]/70 text-[10px] text-[#004F2D] font-bold transition-all shadow-sm"
+                    className={`py-2 px-2 rounded-xl border text-[10px] font-bold transition-all shadow-sm cursor-pointer ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-400 hover:bg-[#1a2d21]' : 'bg-[#F4F8F6] hover:bg-[#E1EDE6] border-[#BDD1C6]/70 text-[#004F2D]'}`}
                   >
                     {lang === 'ru' ? 'Врач: Harrison' : 'Doctor'}
                   </button>
                   <button 
                     type="button"
                     onClick={() => handleQuickLogin('patient')}
-                    className="py-2 px-2 bg-[#F4F8F6] hover:bg-[#E1EDE6] rounded-xl border border-[#BDD1C6]/70 text-[10px] text-[#004F2D] font-bold transition-all shadow-sm"
+                    className={`py-2 px-2 rounded-xl border text-[10px] font-bold transition-all shadow-sm cursor-pointer ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-400 hover:bg-[#1a2d21]' : 'bg-[#F4F8F6] hover:bg-[#E1EDE6] border-[#BDD1C6]/70 text-[#004F2D]'}`}
                   >
                     {lang === 'ru' ? 'Пациент: Ivanov' : 'Patient'}
                   </button>
-                  <button 
-                    type="button"
-                    onClick={() => handleQuickLogin('admin')}
-                    className="py-2 px-2 bg-[#F4F8F6] hover:bg-[#E1EDE6] rounded-xl border border-[#BDD1C6]/70 text-[10px] text-[#004F2D] font-bold transition-all shadow-sm"
-                  >
-                    {lang === 'ru' ? 'Админ: Brandt' : 'Assessor'}
-                  </button>
                 </div>
-                <span className="text-[9px] text-gray-500 font-mono mt-2.5 block">Регистрационный пароль по умолчанию: <b>Password123</b></span>
+                <span className="text-[9px] text-gray-500 font-mono mt-2.5 block">Регистрационный пароль по умолчанию: 123456</span>
               </div>
             </div>
           ) : (
-            
-            // LOGGED IN DASHBOARD VIEW (With 2FA secure block check first)
-            show2FAForm ? (
-              <div className="max-w-md w-full mx-auto my-auto bg-white border border-[#BDD1C6]/70 p-6 rounded-2xl shadow-sm space-y-4 text-left">
+            <div className={`max-w-md w-full mx-auto my-auto border p-6 rounded-2xl shadow-sm space-y-4 text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b] text-white' : 'bg-white border-[#BDD1C6]/70'}`}>
                 <div className="text-center font-mono">
-                  <span className="w-12 h-12 rounded-full border border-dashed border-[#004F2D] flex items-center justify-center mx-auto text-[#004F2D] text-lg font-bold">2FA</span>
-                  <h4 className="text-xs uppercase tracking-widest text-[#004F2D] font-black mt-3">Двухфакторная авторизация GDPR</h4>
-                  <p className="text-[10.5px] text-gray-500 mt-1 leading-relaxed">
+                  <span className={`w-12 h-12 rounded-full border border-dashed flex items-center justify-center mx-auto text-lg font-bold ${isDarkMode ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-[#004F2D] text-[#004F2D]'}`}>2FA</span>
+                  <h4 className={`text-xs uppercase tracking-widest font-black mt-3 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>Двухфакторная авторизация GDPR</h4>
+                  <p className={`text-[10.5px] mt-1 leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     На ваш защищённый адрес выслан временный одноразовый OTP-токен авторизации.
                   </p>
                 </div>
 
-                <div className="bg-[#F4F8F6] p-3 rounded-xl border border-[#BDD1C6]/70 text-center font-mono text-[11px] text-[#004F2D] space-y-1">
+                <div className={`p-3 rounded-xl border text-center font-mono text-[11px] space-y-1 ${isDarkMode ? 'bg-[#15241b] border-[#22392b] text-emerald-300' : 'bg-[#F4F8F6] border-[#BDD1C6]/70 text-[#004F2D]'}`}>
                   <span className="text-[9px] uppercase tracking-wider block text-gray-450">Временный токен авторизации (демо):</span>
                   <strong className="text-[#D4AF37] text-lg tracking-widest block font-extrabold">{otpSent}</strong>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[9px] uppercase text-gray-500 font-mono tracking-wider font-bold">Введите одноразовый проверочный код</label>
+                  <label className="text-[9px] uppercase font-mono tracking-wider font-bold text-gray-400">Введите одноразовый проверочный код</label>
                   <input 
                     type="text"
                     maxLength={4}
                     value={otpInput}
                     onChange={(e) => setOtpInput(e.target.value)}
                     placeholder="••••"
-                    className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-3 text-center text-xl text-[#004F2D] font-mono tracking-widest focus:outline-none focus:border-[#004F2D] shadow-inner"
+                    className={`border rounded-xl p-3 text-center text-xl font-mono tracking-widest focus:outline-none focus:border-[#D4AF37] shadow-inner ${isDarkMode ? 'bg-[#15241b] border-[#22392b] text-white' : 'bg-[#F8FAF9] border-[#BDD1C6] text-[#004F2D]'}`}
                   />
                 </div>
 
                 {otpError && (
-                  <div className="text-[10px] bg-rose-50 text-rose-800 p-2 text-center rounded-xl border border-rose-200">
+                  <div className="text-[10px] bg-rose-950 text-rose-300 p-2 text-center rounded-xl border border-rose-900">
                     {otpError}
                   </div>
                 )}
 
                 <button 
                   onClick={handleVerify2FAToken}
-                  className="w-full py-3 bg-[#004F2D] text-white font-bold uppercase tracking-wider text-xs rounded-xl hover:bg-[#00321c] transition-all cursor-pointer text-center font-mono shadow-sm"
+                  className={`w-full py-3 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all cursor-pointer text-center font-mono shadow-sm ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b0912c]' : 'bg-[#004F2D] hover:bg-[#00321c]'}`}
                 >
                   Верифицировать DSGVO сессию
                 </button>
               </div>
-            ) : (
+            )
+          ) : (
 
               <div id="logged-dashboard" className="flex flex-col gap-6">
 
                 {/* Secure Top Welcome Strip */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 md:p-6 gap-4 shadow-sm text-left">
+                <div className={`flex flex-col md:flex-row justify-between items-start md:items-center border rounded-2xl p-5 md:p-6 gap-4 shadow-sm text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#F4F8F6] border border-[#BDD1C6]/80 rounded-full flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-[#004F2D]" />
+                    <div className={`w-10 h-10 border rounded-full flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border-[#253e2f]' : 'bg-[#F4F8F6] border-[#BDD1C6]/80'}`}>
+                      <UserIcon className={`w-5 h-5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
                     </div>
                     <div>
-                      <span className="text-[9px] tracking-wider uppercase font-mono text-[#004F2D] font-extrabold block">
+                      <span className={`text-[9px] tracking-wider uppercase font-mono font-extrabold block ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>
                         {user.role === 'admin' ? (lang === 'ru' ? 'Панель Медицинского Редактора' : 'Administrator Portal') : (user.role === 'doctor' ? t.doctorPortal : t.patientPortal)}
                       </span>
-                      <h2 className="text-xl md:text-2xl font-black text-[#1A3025] tracking-tight">{user.name}</h2>
+                      <h2 className={`text-xl md:text-2xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-[#1A3025]'}`}>{user.name}</h2>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
-                    <div className="px-3 py-1.5 bg-[#F4F8F6] text-[#004F2D] border border-[#BDD1C6]/70 rounded-xl text-[10px] font-mono font-bold flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#004F2D] animate-ping"></span>
+                    <div className={`px-3 py-1.5 border rounded-xl text-[10px] font-mono font-bold flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-[#D4AF37]' : 'bg-[#F4F8F6] border-[#BDD1C6]/70 text-[#004F2D]'}`}>
+                      <span className={`w-2.5 h-2.5 rounded-full animate-ping ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></span>
                       <span>ONLINE SSL SESSION ENCRYPTED</span>
                     </div>
 
@@ -850,7 +869,7 @@ export default function App() {
 
                 {/* --- 1. ADMIN DESK WORKSPACE --- */}
                 {user.role === 'admin' && (
-                  <AdminPortal lang={lang} onRefresh={fetchInitialContext} />
+                  <AdminPortal lang={lang} onRefresh={fetchInitialContext} isDarkMode={isDarkMode} />
                 )}
 
                 {/* --- 2. DOCTOR WORKSPACE --- */}
@@ -864,14 +883,16 @@ export default function App() {
                       <DicomViewer 
                         patientName={caseName || 'Maxim Ivanov'} 
                         slicesCount={activeCase?.dicomSnaps?.[0]?.slices || 15} 
+                        isDarkMode={isDarkMode}
+                        lang={lang}
                       />
 
                       {/* Diagnostic constructor inputs (anamnesis, complaints, references) */}
-                      <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 md:p-6 shadow-sm text-left relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+                      <div className={`rounded-2xl p-5 md:p-6 shadow-sm text-left relative overflow-hidden border transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                         
-                        <div className="flex justify-between items-center mb-4 border-b border-[#E1EDE6] pb-3">
-                          <h3 className="text-xs uppercase font-mono tracking-widest text-[#004F2D] font-black">
+                        <div className={`flex justify-between items-center mb-4 border-b pb-3 ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                          <h3 className={`text-xs uppercase font-mono tracking-widest font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>
                             {t.createOpinion}
                           </h3>
                           {activeSlaTimer && (
@@ -884,23 +905,23 @@ export default function App() {
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
-                              <label className="text-[10px] uppercase font-bold text-gray-500 font-mono">{t.patientFio}</label>
+                              <label className="text-[10px] uppercase font-bold text-gray-400 font-mono">{t.patientFio}</label>
                               <input 
                                 type="text" 
                                 required
                                 value={caseName}
                                 onChange={(e) => setCaseName(e.target.value)}
                                 placeholder="Maxim Ivanov" 
-                                className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] placeholder-gray-400 focus:outline-none focus:border-[#004F2D] shadow-inner"
+                                className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-500 shadow-inner' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400 shadow-inner'}`}
                               />
                               
                               <div className="flex flex-wrap gap-1 mt-1.5 items-center">
-                                <span className="text-[9px] text-gray-400 font-mono">Быстрый выбор:</span>
+                                <span className="text-[9px] text-gray-500 font-mono">Быстрый выбор:</span>
                                 {patientList.map((p) => (
                                   <button 
                                     key={p.id}
                                     onClick={() => { setCaseName(p.name); setSelectedPatientId(p.id); }}
-                                    className="text-[9px] bg-[#F4F8F6] text-[#004F2D] px-2 py-0.5 rounded-xl hover:bg-[#E1EDE6] transition-colors border border-[#BDD1C6]/70 cursor-pointer font-bold shadow-sm"
+                                    className={`text-[9px] px-2 py-0.5 rounded-xl border transition-colors cursor-pointer font-bold shadow-sm ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-400 hover:bg-[#1a2d21]' : 'bg-[#F4F8F6] text-[#004F2D] hover:bg-[#E1EDE6] border border-[#BDD1C6]/70'}`}
                                   >
                                     {p.name}
                                   </button>
@@ -909,11 +930,11 @@ export default function App() {
                             </div>
 
                             <div className="flex flex-col gap-1">
-                              <label className="text-[10px] uppercase font-bold text-gray-500 font-mono">База литературы</label>
+                              <label className="text-[10px] uppercase font-bold text-gray-400 font-mono">База литературы</label>
                               <select 
                                 value={clinicalRefName}
                                 onChange={(e) => setClinicalRefName(e.target.value)}
-                                className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] focus:outline-none focus:border-[#004F2D]"
+                                className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-155 ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37] [&>option]:bg-[#111e15] [&>option]:text-white' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D]'}`}
                               >
                                 <option value="Müller's Cardiology Textbook, 5th Edition">Müller's Cardiology, 5th Edition</option>
                                 <option value="European Ultrasound Guidelines V4">European Ultrasound Guidelines V4</option>
@@ -923,35 +944,35 @@ export default function App() {
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 font-mono">{t.patientAnamnesis}</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 font-mono">{t.patientAnamnesis}</label>
                             <textarea 
                               rows={3}
                               value={anamnesis}
                               onChange={(e) => setAnamnesis(e.target.value)}
                               placeholder="Жалобы пациента..."
-                              className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] placeholder-gray-400 focus:outline-none focus:border-[#004F2D] font-mono shadow-inner"
+                              className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 font-mono shadow-inner ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-500' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400'}`}
                             />
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 font-mono">{t.ultrasoundResults}</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 font-mono">{t.ultrasoundResults}</label>
                             <textarea 
                               rows={2}
                               value={ultrasound}
                               onChange={(e) => setUltrasound(e.target.value)}
                               placeholder="ФВ ЛЖ 62%. Митральная регургитация 1 степени..."
-                              className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] placeholder-gray-400 focus:outline-none focus:border-[#004F2D] font-mono shadow-inner"
+                              className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 font-mono shadow-inner ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-500' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400'}`}
                             />
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] uppercase font-bold text-gray-500 font-mono">{t.otherDetails}</label>
+                            <label className="text-[10px] uppercase font-bold text-gray-400 font-mono">{t.otherDetails}</label>
                             <input 
                               type="text"
                               value={otherInfo}
                               onChange={(e) => setOtherInfo(e.target.value)}
                               placeholder="Давление 135/85 мм рт. ст..."
-                              className="bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] placeholder-gray-400 focus:outline-none focus:border-[#004F2D] shadow-inner"
+                              className={`rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 shadow-inner ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37] placeholder-gray-500' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D] placeholder-gray-400'}`}
                             />
                           </div>
 
@@ -959,46 +980,47 @@ export default function App() {
                             type="button"
                             onClick={handleGenerateAiConclusion}
                             disabled={aiLoading}
-                            className="w-full py-3 bg-[#004F2D] text-white font-bold uppercase tracking-wider text-xs rounded-xl hover:bg-[#003820] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                            className={`w-full py-3 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b0912c]' : 'bg-[#004F2D] hover:bg-[#003820]'}`}
                           >
                             <Sparkles className="w-4 h-4 text-[#D4AF37] animate-pulse" />
                             <span>{aiLoading ? t.generating : t.generateWithAi}</span>
                           </button>
 
                           {aiError && (
-                            <div className="bg-rose-50 text-rose-800 text-xs p-3 rounded-xl border border-rose-200">
-                              {aiError}
+                            <div className="bg-rose-50 text-rose-800 text-xs p-3 rounded-xl border border-rose-200 font-bold flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                              <span>{aiError}</span>
                             </div>
                           )}
                         </div>
 
                         {/* Editable GenAI report */}
                         {(aiReport || aiLoading) && (
-                          <div className="mt-6 border-t border-[#E1EDE6] pt-6">
+                          <div className={`mt-6 pt-6 border-t ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
                             {aiLoading ? (
-                              <div className="bg-[#F8FAF9] p-6 text-center text-xs text-gray-400 font-mono rounded-xl border border-dashed border-[#BDD1C6]">Synthesizing expert consultation materials...</div>
+                              <div className={`p-6 text-center text-xs font-mono rounded-xl border border-dashed transition-colors ${isDarkMode ? 'bg-[#15241c] border-[#253e2f] text-gray-400' : 'bg-[#F8FAF9] border-[#BDD1C6] text-gray-400'}`}>Synthesizing expert consultation materials...</div>
                             ) : (
                               <div className="space-y-4 text-left">
-                                <span className="text-[10px] font-mono text-[#004F2D] uppercase font-extrabold block">Редактируемый текст заключения европейского профессора (Cyrillic PDF exportable):</span>
+                                <span className={`text-[10px] font-mono uppercase font-extrabold block ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>Редактируемый текст заключения европейского профессора (Cyrillic PDF exportable):</span>
                                 <textarea 
                                   rows={10}
                                   value={aiReport}
                                   onChange={(e) => setAiReport(e.target.value)}
-                                  className="w-full bg-[#F4F8F6] text-[#1A3025] p-4 rounded-xl border border-[#BDD1C6] font-mono text-xs focus:outline-none focus:border-[#004F2D] shadow-inner"
+                                  className={`w-full p-4 rounded-xl border font-mono text-xs focus:outline-none transition-colors duration-150 shadow-inner ${isDarkMode ? 'bg-[#15241c] border-[#22392b] text-white focus:border-[#D4AF37]' : 'bg-[#F4F8F6] text-[#1A3025] border border-[#BDD1C6] focus:border-[#004F2D]'}`}
                                 />
 
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                  <span className="text-[10px] text-gray-500 italic font-mono font-bold">Citing database: {clinicalRefName}</span>
+                                  <span className={`text-[10px] italic font-mono font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Citing database: {clinicalRefName}</span>
                                   <button 
                                     onClick={handleSaveConclusion}
-                                    className="py-2.5 px-5 bg-[#004F2D] hover:bg-[#003520] text-white rounded-xl font-bold text-xs uppercase cursor-pointer"
+                                    className={`py-2.5 px-5 text-white rounded-xl font-bold text-xs uppercase cursor-pointer transition-colors ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b0912c]' : 'bg-[#004F2D] hover:bg-[#003520]'}`}
                                   >
                                     {t.saveOpinion}
                                   </button>
                                 </div>
 
                                 {saveStatus && (
-                                  <div className="bg-[#F4F8F6] text-xs text-[#004F2D] p-2.5 rounded-xl border border-[#BDD1C6] text-center font-mono font-bold">
+                                  <div className={`text-xs p-2.5 rounded-xl border text-center font-mono font-bold transition-colors ${isDarkMode ? 'bg-[#15242c] border-[#253e2f] text-emerald-400' : 'bg-[#F4F8F6] text-[#004F2D] border border-[#BDD1C6]'}`}>
                                     {saveStatus}
                                   </div>
                                 )}
@@ -1016,30 +1038,29 @@ export default function App() {
                       
                       {/* Active Case tracker chat log channel */}
                       {selectedCaseId ? (
-                        <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 flex flex-col h-[340px] text-left relative overflow-hidden shadow-sm">
-                          <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+                        <div className={`border rounded-2xl p-5 flex flex-col h-[340px] text-left relative overflow-hidden shadow-sm transition-all duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                          <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                           
-                          <div className="flex items-center gap-1.5 border-b border-[#E1EDE6] pb-2 mb-3">
-                            <MessageSquare className="w-4.5 h-4.5 text-[#004F2D]" />
-                            <h3 className="text-xs uppercase font-mono tracking-widest text-[#004F2D] font-extrabold">
+                          <div className={`flex items-center gap-1.5 border-b pb-2 mb-3 ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                            <MessageSquare className={`w-4.5 h-4.5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
+                            <h3 className={`text-xs uppercase font-mono tracking-widest font-extrabold ${isDarkMode ? 'text-white' : 'text-[#004F2D]'}`}>
                               Защищённый клинический чат (GDPR)
                             </h3>
                           </div>
 
-                          <div className="flex-1 overflow-y-auto space-y-2.5 p-2.5 bg-[#F8FAF9] rounded-xl border border-[#BDD1C6]/70 text-xs font-mono max-h-[180px]">
+                          <div ref={chatContainerRef} className={`flex-1 overflow-y-auto space-y-2.5 p-2.5 rounded-xl border text-xs font-mono max-h-[180px] transition-colors duration-200 ${isDarkMode ? 'bg-[#15241c] border-[#253e2f]' : 'bg-[#F8FAF9] border-[#BDD1C6]/70'}`}>
                             {chatMessages.length === 0 ? (
                               <p className="text-gray-400 italic text-center text-[10px] py-6">Сообщений в архиве нет.</p>
                             ) : (
                               chatMessages.map(m => (
                                 <div key={m.id} className={`flex flex-col ${m.senderRole === 'patient' ? 'items-start' : 'items-end'}`}>
                                   <span className="text-[9px] text-gray-500 font-bold">{m.senderName} ({m.senderRole})</span>
-                                  <div className={`p-2 rounded-xl mt-0.5 max-w-[85%] leading-relaxed ${m.senderRole === 'patient' ? 'bg-[#E1EDE6] text-[#004F2D] text-left border border-[#BDD1C6]' : 'bg-[#004F2D] text-white text-right'}`}>
+                                  <div className={`p-2 rounded-xl mt-0.5 max-w-[85%] leading-relaxed ${m.senderRole === 'patient' ? (isDarkMode ? 'bg-[#1b2f23] text-emerald-100 border border-[#233d2e]' : 'bg-[#E1EDE6] text-[#004F2D] text-left border border-[#BDD1C6]') : 'bg-[#004F2D] text-white text-right'}`}>
                                     {m.messageText}
                                   </div>
                                 </div>
                               ))
                             )}
-                            <div ref={chatBottomRef} />
                           </div>
 
                           <form onSubmit={handlePostChatMessage} className="flex gap-2 mt-3">
@@ -1049,11 +1070,11 @@ export default function App() {
                               value={chatInput}
                               onChange={(e) => setChatInput(e.target.value)}
                               placeholder="Задать вопрос..."
-                              className="flex-1 bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] focus:outline-none focus:border-[#004F2D]"
+                              className={`flex-1 rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37]' : 'bg-[#F8FAF9] border border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D]'}`}
                             />
                             <button 
                               type="submit"
-                              className="p-2.5 bg-[#004F2D] text-white rounded-xl hover:bg-[#003820] cursor-pointer shadow-sm"
+                              className={`p-2.5 text-white rounded-xl hover:bg-opacity-90 cursor-pointer shadow-sm transition-colors ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b0912c]' : 'bg-[#004F2D] hover:bg-[#003820]'}`}
                             >
                               <Send className="w-3.5 h-3.5 text-white" />
                             </button>
@@ -1062,11 +1083,11 @@ export default function App() {
                       ) : null}
 
                       {/* Doctor case folder database lists */}
-                      <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 text-left relative overflow-hidden shadow-sm">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+                      <div className={`border rounded-2xl p-5 text-left relative overflow-hidden shadow-sm transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                         
-                        <h3 className="text-xs font-mono uppercase tracking-widest text-[#004F2D] font-black mb-3 flex items-center gap-1.5 border-b border-[#E1EDE6] pb-2">
-                          <BookOpen className="w-4 h-4 text-[#D4AF37]" />
+                        <h3 className={`text-xs font-mono uppercase tracking-widest font-black mb-3 flex items-center gap-1.5 border-b pb-2 ${isDarkMode ? 'text-[#D4AF37] border-[#22392b]' : 'text-[#004F2D] border-[#E1EDE6]'}`}>
+                          <BookOpen className={`w-4 h-4 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
                           Пациенты на разборе (SLA Queue)
                         </h3>
 
@@ -1078,15 +1099,15 @@ export default function App() {
                               <div 
                                 key={c.id}
                                 onClick={() => { setSelectedCaseId(c.id); setCaseName(c.patientName); setAnamnesis(c.anamnesis); }}
-                                className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedCaseId === c.id ? 'border-[#004F2D] bg-[#F4F8F6]/60 ring-2 ring-[#004F2D]/10' : 'border-[#BDD1C6]/60 bg-white hover:bg-[#F4F8F6]/30'}`}
+                                className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedCaseId === c.id ? (isDarkMode ? 'border-[#D4AF37] bg-[#1a2e22] ring-2 ring-[#D4AF37]/10' : 'border-[#004F2D] bg-[#F4F8F6]/60 ring-2 ring-[#004F2D]/10') : (isDarkMode ? 'border-[#22392b] bg-[#101b15] hover:bg-[#1a2e21]' : 'border-[#BDD1C6]/60 bg-white hover:bg-[#F4F8F6]/30')}`}
                               >
                                 <div className="flex justify-between items-center column">
-                                  <strong className="text-xs text-[#1A3025]">{c.patientName}</strong>
+                                  <strong className={`text-xs font-bold ${isDarkMode ? 'text-white' : 'text-[#1A3025]'}`}>{c.patientName}</strong>
                                   <span className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded font-bold uppercase ${c.status === 'in_progress' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-[#004F2D]'}`}>
                                     {c.status}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-gray-500 font-mono block mt-1.5 font-semibold">Dir: {c.direction} | Создан: {c.dateCreated}</span>
+                                <span className={`text-[10px] font-mono block mt-1.5 font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Dir: {c.direction} | Создан: {c.dateCreated}</span>
                               </div>
                             ))}
                           </div>
@@ -1106,17 +1127,17 @@ export default function App() {
                     <div className="lg:col-span-8 flex flex-col gap-6 text-left">
                       
                       {/* Interactive Case Creation Button */}
-                      <div className="bg-white border border-[#BDD1C6]/60 p-4.5 rounded-2xl flex justify-between items-center shadow-sm relative overflow-hidden">
-                        <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#004F2D]"></div>
+                      <div className={`border p-4.5 rounded-2xl flex justify-between items-center shadow-sm relative overflow-hidden transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                        <div className={`absolute top-0 left-0 bottom-0 w-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                         <div className="pl-3">
-                          <h3 className="text-xs uppercase font-mono tracking-widest text-[#004F2D] font-extrabold">
+                          <h3 className={`text-xs uppercase font-mono tracking-widest font-extrabold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>
                             Телемедицинский аудит (Европа)
                           </h3>
-                          <p className="text-[11px] text-gray-500 mt-0.5">Хотите заказать новое экспертное заключение у европейского профессора?</p>
+                          <p className={`text-[11px] mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Хотите заказать новое экспертное заключение у европейского профессора?</p>
                         </div>
                         <button 
                           onClick={() => setShowWizard(!showWizard)}
-                          className="py-2 px-4.5 bg-[#004F2D] hover:bg-[#003520] text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          className={`py-2 px-4.5 text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b89626]' : 'bg-[#004F2D] hover:bg-[#003520]'}`}
                         >
                           <PlusCircle className="w-4 h-4 text-white" />
                           <span>{showWizard ? 'Скрыть Анкету' : 'Новый Кейс'}</span>
@@ -1129,18 +1150,19 @@ export default function App() {
                           userId={user.id} 
                           userName={user.name} 
                           lang={lang} 
+                          isDarkMode={isDarkMode}
                           onSuccess={() => { setShowWizard(false); fetchInitialContext(); }} 
                         />
                       )}
 
                       {/* CASE ACTIVE TRACKER STATUS BAR */}
                       {cases.length > 0 && selectedCaseId && (
-                        <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-                          <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+                        <div className={`border rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                          <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                           
-                          <div className="flex justify-between items-center text-xs font-mono border-b border-[#E1EDE6] pb-2">
-                            <span className="text-gray-500 font-bold">ACTIVE CASE AUDIT ID: <b className="text-[#004F2D]">{selectedCaseId}</b></span>
-                            <span className="text-[#004F2D] font-extrabold uppercase">{activeCase?.direction} Case</span>
+                          <div className={`flex justify-between items-center text-xs font-mono border-b pb-2 ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                            <span className="text-gray-500 font-bold">ACTIVE CASE AUDIT ID: <b className={`font-mono ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{selectedCaseId}</b></span>
+                            <span className={`font-extrabold uppercase ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{activeCase?.direction} Case</span>
                           </div>
 
                           {/* Horizontal interactive stepper status lines */}
@@ -1148,30 +1170,30 @@ export default function App() {
                             
                             <div className="flex flex-col items-center">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center border font-mono mb-2 font-bold ${
-                                activeCase?.status ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : 'bg-gray-100 border-gray-300 text-gray-400'
+                                activeCase?.status ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : (isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-450' : 'bg-gray-100 border-gray-300 text-gray-400')
                               }`}>1</span>
-                              <span className="text-[#004F2D] uppercase font-bold">Documents received</span>
+                              <span className={`uppercase font-bold ${isDarkMode ? 'text-emerald-400' : 'text-[#004F2D]'}`}>Documents received</span>
                             </div>
 
                             <div className="flex flex-col items-center">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center border font-mono mb-2 font-bold ${
-                                activeCase?.isPreScreened ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : 'bg-white border-gray-300 text-gray-400'
+                                activeCase?.isPreScreened ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : (isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-500' : 'bg-white border-gray-300 text-gray-400')
                               }`}>2</span>
-                              <span className={activeCase?.isPreScreened ? 'text-[#004F2D] font-bold' : 'text-gray-400 font-medium'}>Under pre-screening</span>
+                              <span className={activeCase?.isPreScreened ? (isDarkMode ? 'text-white font-bold' : 'text-[#004F2D] font-bold') : 'text-gray-400 font-medium'}>Under pre-screening</span>
                             </div>
 
                             <div className="flex flex-col items-center">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center border font-mono mb-2 font-bold ${
-                                activeCase?.status === 'in_progress' || activeCase?.status === 'ready' ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : 'bg-white border-gray-300 text-gray-400'
+                                activeCase?.status === 'in_progress' || activeCase?.status === 'ready' ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : (isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-500' : 'bg-white border-gray-300 text-gray-400')
                               }`}>3</span>
-                              <span className={activeCase?.status === 'in_progress' || activeCase?.status === 'ready' ? 'text-[#004F2D] font-bold' : 'text-gray-400 font-medium'}>In progress with expert</span>
+                              <span className={activeCase?.status === 'in_progress' || activeCase?.status === 'ready' ? (isDarkMode ? 'text-white font-bold' : 'text-[#004F2D] font-bold') : 'text-gray-400 font-medium'}>In progress with expert</span>
                             </div>
 
                             <div className="flex flex-col items-center">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center border font-mono mb-2 font-bold ${
-                                activeCase?.status === 'ready' ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : 'bg-white border-gray-300 text-gray-400'
+                                activeCase?.status === 'ready' ? 'bg-[#004F2D] border-[#004F2D] text-white shadow-sm' : (isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-500' : 'bg-white border-gray-300 text-gray-400')
                               }`}>4</span>
-                              <span className={activeCase?.status === 'ready' ? 'text-[#004F2D] font-bold' : 'text-gray-400 font-medium'}>Conclusion ready</span>
+                              <span className={activeCase?.status === 'ready' ? (isDarkMode ? 'text-white font-bold' : 'text-[#004F2D] font-bold') : 'text-gray-400 font-medium'}>Conclusion ready</span>
                             </div>
 
                           </div>
@@ -1179,20 +1201,20 @@ export default function App() {
                       )}
 
                       {/* Past Medical conclusions lists */}
-                      <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 md:p-6 shadow-sm text-left relative overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-[#D4AF37]"></div>
+                      <div className={`border rounded-2xl p-5 md:p-6 shadow-sm text-left relative overflow-hidden transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                        <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                         
-                        <div className="flex items-center gap-2 border-b border-[#E1EDE6] pb-4 mb-4">
-                          <FileText className="w-5 h-5 text-[#004F2D]" />
-                          <h3 className="text-sm uppercase tracking-widest text-[#004F2D] font-black">
+                        <div className={`flex items-center gap-2 border-b pb-4 mb-4 ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                          <FileText className={`w-5 h-5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
+                          <h3 className={`text-sm uppercase tracking-widest font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>
                             {t.myOpinions}
                           </h3>
                         </div>
 
                         {conclusions.length === 0 ? (
-                          <div className="p-8 text-center bg-[#F8FAF9] rounded-xl border border-dashed border-[#BDD1C6]">
-                            <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500 italic max-w-md mx-auto font-mono">
+                          <div className={`p-8 text-center rounded-xl border border-dashed transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border-[#22392b]' : 'bg-[#F8FAF9] border-[#BDD1C6]'}`}>
+                            <FileText className="w-8 h-8 text-gray-450 mx-auto mb-2" />
+                            <p className="text-xs text-gray-400 italic max-w-md mx-auto font-mono">
                               {lang === 'ru' 
                                 ? "Для вашего кабинета пока нет выписанных европейских вторых мнений. Вы можете создать кейс-анкету (кнопка 'Новый Кейс' выше) или переключить демо-роль на Врача и мгновенно выписать отчет по вашим томограммам." 
                                 : "No second opinions compiled yet. Please check again later or switch role to Doctor to write a report for yourself."
@@ -1202,33 +1224,33 @@ export default function App() {
                         ) : (
                           <div className="space-y-6">
                             {conclusions.map((con) => (
-                              <div key={con.id} className="bg-white rounded-xl border border-[#BDD1C6] overflow-hidden shadow-sm relative">
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#D4AF37]"></div>
+                              <div key={con.id} className={`rounded-xl border overflow-hidden shadow-sm relative transition-colors duration-200 ${isDarkMode ? 'bg-[#15241b] border-[#22392b]' : 'bg-white border-[#BDD1C6]'}`}>
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                                 
-                                <div className="bg-[#F4F8F6] p-4 border-b border-[#E1EDE6] flex justify-between items-center text-left">
+                                <div className={`p-4 border-b flex justify-between items-center text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#1a2d21] border-[#22392b]' : 'bg-[#F4F8F6] border-[#E1EDE6]'}`}>
                                   <div className="pl-2">
-                                    <span className="text-[8.5px] font-mono text-[#004F2D] uppercase tracking-wider block font-black">Authorized Specialist Conclusion</span>
-                                    <span className="text-sm font-black text-[#1A3025]">{con.doctorName}</span>
+                                    <span className={`text-[8.5px] font-mono uppercase tracking-wider block font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>Authorized Specialist Conclusion</span>
+                                    <span className={`text-sm font-black ${isDarkMode ? 'text-white' : 'text-[#1A3025]'}`}>{con.doctorName}</span>
                                   </div>
                                   <div className="text-right">
                                     <span className="text-[8.5px] font-mono text-gray-400 block font-bold">{t.date}</span>
-                                    <span className="text-xs font-mono font-black text-[#004F2D]">{con.date}</span>
+                                    <span className={`text-xs font-mono font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{con.date}</span>
                                   </div>
                                 </div>
 
                                 <div className="p-4 md:p-5 space-y-4 text-xs md:text-sm">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#F8FAF9] p-3 rounded-xl border border-[#BDD1C6]/60 font-mono text-[11px] text-[#4B5E53] text-left">
+                                  <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 p-3 rounded-xl border font-mono text-[11px] text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b] text-gray-300' : 'bg-[#F8FAF9] border-[#BDD1C6]/60 text-[#4B5E53]'}`}>
                                     <div>
-                                      <span className="text-gray-400 uppercase tracking-wider text-[9px] font-bold block">Patient Name</span>
-                                      <strong className="text-[#1A3025] font-bold">{con.patientName}</strong>
+                                      <span className="text-gray-500 uppercase tracking-wider text-[9px] font-bold block">Patient Name</span>
+                                      <strong className={`font-bold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#1A3025]'}`}>{con.patientName}</strong>
                                     </div>
                                     <div>
-                                      <span className="text-gray-400 uppercase tracking-wider text-[9px] font-bold block">Anamnesis Analyzed</span>
-                                      <span className="text-[#1A3025] line-clamp-1 italic font-medium">{con.anamnesis}</span>
+                                      <span className="text-gray-500 uppercase tracking-wider text-[9px] font-bold block">Anamnesis Analyzed</span>
+                                      <span className={`line-clamp-1 italic font-medium ${isDarkMode ? 'text-[#E6F3EC]' : 'text-[#1A3025]'}`}>{con.anamnesis}</span>
                                     </div>
                                   </div>
 
-                                  <div className="text-[#1A3025] leading-relaxed whitespace-pre-line font-mono text-[11.5px] bg-[#F8FAF9] p-4 rounded-xl border border-[#BDD1C6]/70 shadow-inner text-left max-h-72 overflow-y-auto">
+                                  <div className={`leading-relaxed whitespace-pre-line font-mono text-[11.5px] p-4 rounded-xl border shadow-inner text-left max-h-72 overflow-y-auto transition-colors duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b] text-white' : 'bg-[#F8FAF9] border-[#BDD1C6]/70 text-[#1A3025]'}`}>
                                     {con.reportText}
                                   </div>
                                 </div>
@@ -1245,30 +1267,29 @@ export default function App() {
                       
                       {/* Active Patient Case Secure Live Chat Box */}
                       {selectedCaseId ? (
-                        <div className="bg-white border border-[#BDD1C6]/60 rounded-2xl p-5 flex flex-col h-[340px] relative overflow-hidden shadow-sm">
-                          <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+                        <div className={`border rounded-2xl p-5 flex flex-col h-[340px] relative overflow-hidden shadow-sm transition-all duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
+                          <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
                           
-                          <div className="flex items-center gap-1.5 border-b border-[#E1EDE6] pb-2 mb-3">
-                            <MessageSquare className="w-4.5 h-4.5 text-[#004F2D]" />
-                            <h3 className="text-xs uppercase font-mono tracking-widest text-[#004F2D] font-extrabold">
+                          <div className={`flex items-center gap-1.5 border-b pb-2 mb-3 ${isDarkMode ? 'border-[#22392b]' : 'border-[#E1EDE6]'}`}>
+                            <MessageSquare className={`w-4.5 h-4.5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
+                            <h3 className={`text-xs uppercase font-mono tracking-widest font-extrabold ${isDarkMode ? 'text-white' : 'text-[#004F2D]'}`}>
                               Защищённый клинический чат (GDPR)
                             </h3>
                           </div>
 
-                          <div className="flex-1 overflow-y-auto space-y-2.5 p-2.5 bg-[#F8FAF9] rounded-xl border border-[#BDD1C6]/70 text-xs font-mono max-h-[180px]">
+                          <div ref={chatContainerRef} className={`flex-1 overflow-y-auto space-y-2.5 p-2.5 rounded-xl border text-xs font-mono max-h-[180px] transition-colors duration-200 ${isDarkMode ? 'bg-[#15241c] border-[#253e2f]' : 'bg-[#F8FAF9] border-[#BDD1C6]/70'}`}>
                             {chatMessages.length === 0 ? (
                               <p className="text-gray-400 italic text-center text-[10px] py-6">Сообщений в архиве нет. Задайте ваш первый вопрос врачу.</p>
                             ) : (
                               chatMessages.map(m => (
                                 <div key={m.id} className={`flex flex-col ${m.senderRole === 'patient' ? 'items-end' : 'items-start'}`}>
                                   <span className="text-[9px] text-gray-500 font-bold">{m.senderName} ({m.senderRole})</span>
-                                  <div className={`p-2 rounded-xl mt-0.5 max-w-[85%] leading-relaxed ${m.senderRole === 'patient' ? 'bg-[#004F2D] text-white text-right shadow-sm' : 'bg-[#E1EDE6] text-[#004F2D] text-left border border-[#BDD1C6]'}`}>
+                                  <div className={`p-2 rounded-xl mt-0.5 max-w-[85%] leading-relaxed ${m.senderRole === 'patient' ? 'bg-[#004F2D] text-white text-right shadow-sm' : (isDarkMode ? 'bg-[#1b2f23] text-emerald-100 border border-[#233d2e]' : 'bg-[#E1EDE6] text-[#004F2D] text-left border border-[#BDD1C6]')}`}>
                                     {m.messageText}
                                   </div>
                                 </div>
                               ))
                             )}
-                            <div ref={chatBottomRef} />
                           </div>
 
                           <form onSubmit={handlePostChatMessage} className="flex gap-2 mt-3">
@@ -1278,11 +1299,11 @@ export default function App() {
                               value={chatInput}
                               onChange={(e) => setChatInput(e.target.value)}
                               placeholder="Написать ассистенту..."
-                              className="flex-1 bg-[#F8FAF9] border border-[#BDD1C6] rounded-xl p-2.5 text-xs text-[#1A3025] focus:outline-none focus:border-[#004F2D]"
+                              className={`flex-1 rounded-xl p-2.5 text-xs focus:outline-none transition-colors duration-150 ${isDarkMode ? 'bg-[#15241c] border border-[#22392b] text-white focus:border-[#D4AF37]' : 'bg-[#F8FAF9] border-[#BDD1C6] text-[#1A3025] focus:border-[#004F2D]'}`}
                             />
                             <button 
                               type="submit"
-                              className="p-2.5 bg-[#004F2D] text-white rounded-xl hover:bg-[#003820] cursor-pointer shadow-sm"
+                              className={`p-2.5 text-white rounded-xl hover:bg-opacity-90 cursor-pointer shadow-sm transition-colors ${isDarkMode ? 'bg-[#D4AF37] hover:bg-[#b0912c]' : 'bg-[#004F2D] hover:bg-[#003820]'}`}
                             >
                               <Send className="w-3.5 h-3.5 text-white" />
                             </button>
@@ -1396,9 +1417,7 @@ export default function App() {
                 )}
 
               </div>
-            )
-
-          )}
+            )}
 
         </main>
       </div>

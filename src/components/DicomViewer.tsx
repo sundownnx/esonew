@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sliders, Maximize, RefreshCw, ZoomIn, ZoomOut, Move, Ruler, CheckCircle } from 'lucide-react';
+import { translations } from '../localization';
+import { LanguageCode } from '../types';
 
 interface DicomViewerProps {
   patientName: string;
   slicesCount: number;
+  isDarkMode?: boolean;
+  lang: LanguageCode;
 }
 
-export default function DicomViewer({ patientName, slicesCount = 15 }: DicomViewerProps) {
+export default function DicomViewer({ patientName, slicesCount = 15, isDarkMode = false, lang }: DicomViewerProps) {
+  const t = translations[lang] || translations['en'];
   const [slice, setSlice] = useState<number>(Math.floor(slicesCount / 2));
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
@@ -240,33 +245,33 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
   };
 
   return (
-    <div className="bg-white rounded-xl border border-[#BDD1C6]/60 p-4 flex flex-col gap-4 shadow-sm">
+    <div className={`rounded-xl p-4 flex flex-col gap-4 shadow-sm border transition-all duration-200 ${isDarkMode ? 'bg-[#101b15] border-[#22392b]' : 'bg-white border-[#BDD1C6]/60'}`}>
       {/* PACS Workstation Header Status */}
-      <div className="flex justify-between items-center border-b border-[#E1EDE6] pb-2 text-[10px] font-mono text-gray-500">
+      <div className={`flex justify-between items-center pb-2 text-[10px] font-mono border-b ${isDarkMode ? 'border-[#22392b] text-gray-400' : 'border-[#E1EDE6] text-gray-500'}`}>
         <div>
-          <span className="text-[#004F2D] font-bold">PACS WORKSTATION v4.11</span>
+          <span className={`font-bold uppercase ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{t.pacsWorkstation}</span>
           <span className="mx-2">|</span>
-          <span>PATIENT: {patientName.toUpperCase()}</span>
+          <span>{t.pacsPatient}: {patientName.toUpperCase()}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span>
-          <span className="text-[#004F2D] font-bold uppercase text-[9px]">SLA SYNC ACTIVE</span>
+          <span className={`font-bold uppercase text-[9px] ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{t.slaSync}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Left Side: Interactive Canvas viewer */}
-        <div className="md:col-span-8 flex flex-col justify-center items-center bg-black rounded-lg p-2 border border-[#BDD1C6]/40 relative overflow-hidden group">
+        <div className={`md:col-span-8 flex flex-col justify-center items-center bg-black rounded-lg p-2 border relative overflow-hidden group ${isDarkMode ? 'border-[#22392b]' : 'border-[#BDD1C6]/40'}`}>
           
           {/* Scientific crosshair anchors on viewport border */}
           <div className="absolute top-2 left-2 text-[9px] text-[#D4AF37] font-mono">
-            ZOOM: {(zoom * 100).toFixed(0)}% <br/>
-            BRIGHTNESS: {brightness}%
+            {t.scaleCaliper}: {(zoom * 100).toFixed(0)}% <br/>
+            {t.brightnessLabel}: {brightness}%
           </div>
 
           <div className="absolute top-2 right-2 text-[9px] text-[#D4AF37] font-mono text-right">
-            Slices: {slice}/{slicesCount} <br/>
-            SLA RULER: {rulerActive ? 'READY (CLICK ON LESIONS TO MEASURE)' : 'DISABLED'}
+            {t.slices}: {slice}/{slicesCount} <br/>
+            {t.pacsRuler}: {rulerActive ? t.readyClickMeasure : t.disabled}
           </div>
 
           <canvas 
@@ -280,12 +285,12 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
 
           {/* Caliper overlay indicators */}
           {measurements.length > 0 && (
-            <div className="absolute bottom-2 left-2 bg-yellow-50/95 p-2 rounded border border-[#D4AF37] text-[9px] font-mono text-[#7D6608] flex flex-col gap-1 max-h-24 overflow-y-auto shadow-md">
-              <span className="font-bold border-b border-yellow-200 pb-0.5 uppercase tracking-wider">Caliper Metrics (mm):</span>
+            <div className={`absolute bottom-2 left-2 p-2 rounded border text-[9px] font-mono flex flex-col gap-1 max-h-24 overflow-y-auto shadow-md ${isDarkMode ? 'bg-[#0f2116]/95 border-[#D4AF37] text-yellow-250' : 'bg-yellow-50/95 border-[#D4AF37] text-[#7D6608]'}`}>
+              <span className={`font-bold border-b pb-0.5 uppercase tracking-wider ${isDarkMode ? 'border-amber-900/40 text-yellow-300' : 'border-yellow-200 text-[#7D6608]'}`}>{t.caliperMetrics}:</span>
               {measurements.map((m, idx) => (
                 <div key={idx} className="flex justify-between gap-4">
                   <span>M{idx + 1}:</span>
-                  <strong className="text-gray-950 font-bold">{m.length.toFixed(2)} mm</strong>
+                  <strong className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-950'}`}>{m.length.toFixed(2)} mm</strong>
                 </div>
               ))}
             </div>
@@ -293,7 +298,7 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
 
           {/* Dynamic slide slider */}
           <div className="w-full flex items-center gap-3 mt-3 px-2">
-            <span className="text-[10px] font-mono text-gray-400 uppercase">Slice stack</span>
+            <span className="text-[10px] font-mono text-gray-400 uppercase font-bold">{t.sliceStack}</span>
             <input 
               type="range"
               min="1"
@@ -302,7 +307,7 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
               onChange={(e) => setSlice(parseInt(e.target.value))}
               className="flex-1 h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-[#D4AF37]"
             />
-            <span className="text-xs font-mono text-[#004F2D] bg-[#F4F8F5] px-2 py-0.5 rounded border border-[#BDD1C6] font-bold">
+            <span className={`text-xs font-mono px-2 py-0.5 rounded border font-bold ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-400' : 'bg-[#F4F8F5] border-[#BDD1C6] text-[#004F2D]'}`}>
               {slice}/{slicesCount}
             </span>
           </div>
@@ -311,17 +316,17 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
         {/* Right Side: Controllers Toolbar */}
         <div className="md:col-span-4 flex flex-col gap-4">
           
-          <div className="bg-[#F4F8F6] border border-[#BDD1C6]/70 rounded-xl p-4 space-y-4 text-left">
-            <h4 className="text-[11px] font-mono uppercase tracking-widest text-[#004F2D] font-bold flex items-center gap-1.5 border-b border-[#BDD1C6]/40 pb-2">
+          <div className={`border rounded-xl p-4 space-y-4 text-left transition-colors duration-200 ${isDarkMode ? 'bg-[#15241c] border-[#253e2f]' : 'bg-[#F4F8F6] border-[#BDD1C6]/70'}`}>
+            <h4 className={`text-[11px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5 border-b pb-2 ${isDarkMode ? 'text-[#D4AF37] border-[#253e2f]' : 'text-[#004F2D] border-[#BDD1C6]/40'}`}>
               <Sliders className="w-4 h-4 text-[#D4AF37]" />
-              PACS Calibration
+              {t.pacsCalibration}
             </h4>
 
             {/* Brightness filter */}
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-mono text-gray-500">
-                <span>Window Level (Brightness)</span>
-                <span className="font-bold text-[#004F2D]">{brightness}%</span>
+                <span>{t.brightnessLabel}</span>
+                <span className={`font-bold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{brightness}%</span>
               </div>
               <input 
                 type="range"
@@ -336,8 +341,8 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
             {/* Contrast filter */}
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] font-mono text-gray-500">
-                <span>Window Width (Contrast)</span>
-                <span className="font-bold text-[#004F2D]">{contrast}%</span>
+                <span>{t.contrastLabel}</span>
+                <span className={`font-bold ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`}>{contrast}%</span>
               </div>
               <input 
                 type="range"
@@ -350,39 +355,39 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
             </div>
 
             {/* Zoom Controls */}
-            <div className="space-y-2 pt-2 border-t border-[#BDD1C6]/40">
-              <span className="text-[10px] font-mono text-gray-400 uppercase font-bold block">Scale & Caliper</span>
+            <div className={`space-y-2 pt-2 border-t ${isDarkMode ? 'border-emerald-900/20' : 'border-[#BDD1C6]/40'}`}>
+              <span className="text-[10px] font-mono text-gray-400 uppercase font-bold block">{t.scaleCaliper}</span>
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={handleZoomIn}
-                  className="py-1.5 px-3 bg-white border border-[#BDD1C6] rounded-lg text-[10px] text-gray-700 hover:text-white hover:bg-[#004F2D] flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium shadow-sm"
+                  className={`py-1.5 px-3 border rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium shadow-sm ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-100 hover:bg-[#1a2d21]' : 'bg-white border-[#BDD1C6] text-gray-700 hover:text-white hover:bg-[#004F2D]'}`}
                 >
                   <ZoomIn className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Scale Up
+                  {t.scaleUp}
                 </button>
                 <button 
                   onClick={handleZoomOut}
-                  className="py-1.5 px-3 bg-white border border-[#BDD1C6] rounded-lg text-[10px] text-gray-700 hover:text-white hover:bg-[#004F2D] flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium shadow-sm"
+                  className={`py-1.5 px-3 border rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-all cursor-pointer font-medium shadow-sm ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-emerald-100 hover:bg-[#1a2d21]' : 'bg-white border-[#BDD1C6] text-gray-700 hover:text-white hover:bg-[#004F2D]'}`}
                 >
                   <ZoomOut className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Scale Down
+                  {t.scaleDown}
                 </button>
               </div>
             </div>
 
             {/* Caliper Action Toolbar */}
-            <div className="pt-2 border-t border-[#BDD1C6]/40 space-y-2">
+            <div className={`pt-2 border-t space-y-2 ${isDarkMode ? 'border-emerald-900/20' : 'border-[#BDD1C6]/40'}`}>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-gray-600 uppercase flex items-center gap-1 font-bold">
-                  <Ruler className="w-3.5 h-3.5 text-[#004F2D]" />
-                  SLA RULER MEASURE (2D)
+                <span className={`text-[10px] font-mono uppercase flex items-center gap-1 font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <Ruler className={`w-3.5 h-3.5 ${isDarkMode ? 'text-[#D4AF37]' : 'text-[#004F2D]'}`} />
+                  {t.slaRulerMeasure}
                 </span>
-                <span className="px-1.5 py-0.5 text-[8px] bg-[#004F2D] text-white font-mono rounded font-bold uppercase">
-                  Calibrated
+                <span className={`px-1.5 py-0.5 text-[8px] text-white font-mono rounded font-bold uppercase ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}>
+                  {t.calibrated}
                 </span>
               </div>
               <p className="text-[9px] text-gray-500 leading-normal italic font-medium">
-                Click twice on the slice view to record cardiac mitral valve leaks or neurological cortical thickness in millimeters.
+                {t.clickTwiceText}
               </p>
               
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -390,17 +395,17 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
                   onClick={() => setRulerActive(!rulerActive)}
                   className={`py-1.5 px-2 border rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold ${
                     rulerActive 
-                    ? 'bg-yellow-50 border-[#D4AF37] text-[#7D6608] hover:bg-yellow-100' 
-                    : 'bg-white border-gray-350 text-gray-400 hover:bg-gray-50'
+                    ? (isDarkMode ? 'bg-amber-950/30 border-[#D4AF37] text-amber-300 hover:bg-amber-950/50' : 'bg-yellow-50 border-[#D4AF37] text-[#7D6608] hover:bg-yellow-100') 
+                    : (isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-400 hover:bg-[#1d3326]' : 'bg-white border-gray-300 text-gray-400 hover:bg-gray-50')
                   }`}
                 >
-                  {rulerActive ? 'Caliper Active' : 'Caliper Stopped'}
+                  {rulerActive ? t.caliperActive : t.caliperStopped}
                 </button>
                 <button 
                   onClick={clearMeasurements}
-                  className="py-1.5 px-2 bg-white hover:bg-[#FFF5F5] border border-gray-300 hover:border-rose-300 text-gray-600 hover:text-rose-600 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer font-semibold"
+                  className={`py-1.5 px-2 border rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer font-semibold ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-gray-300 hover:bg-rose-950/40 hover:text-rose-400 hover:border-rose-900' : 'bg-white hover:bg-[#FFF5F5] border border-gray-300 hover:border-rose-300 text-gray-600 hover:text-rose-600'}`}
                 >
-                  Clear Calipers
+                  {t.clearCalipers}
                 </button>
               </div>
             </div>
@@ -408,10 +413,10 @@ export default function DicomViewer({ patientName, slicesCount = 15 }: DicomView
             {/* Quick calibration status reset */}
             <button 
               onClick={handleReset}
-              className="w-full py-2 mt-2 bg-white border border-[#BDD1C6] hover:border-[#004F2D] text-xs text-[#004F2D] font-mono rounded-lg flex items-center justify-center gap-1.5 hover:bg-emerald-50/50 transition-colors cursor-pointer font-bold shadow-sm"
+              className={`w-full py-2 mt-2 border text-xs font-mono rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer font-bold shadow-sm ${isDarkMode ? 'bg-[#15241b] border-[#253e2f] text-[#D4AF37] hover:bg-[#1f3728] hover:border-emerald-700' : 'bg-white border-[#BDD1C6] hover:border-[#004F2D] text-[#004F2D] hover:bg-emerald-50/50'}`}
             >
               <RefreshCw className="w-3 h-3 text-[#D4AF37]" />
-              Reset PACS Parameters
+              {t.resetPacs}
             </button>
 
           </div>

@@ -7,9 +7,10 @@ interface CaseWizardProps {
   userName: string;
   lang: LanguageCode;
   onSuccess: () => void;
+  isDarkMode?: boolean;
 }
 
-export default function CaseWizard({ userId, userName, lang, onSuccess }: CaseWizardProps) {
+export default function CaseWizard({ userId, userName, lang, onSuccess, isDarkMode = false }: CaseWizardProps) {
   const [step, setStep] = useState<number>(1);
   const [direction, setDirection] = useState<string>('Cardiology');
   const [anamnesis, setAnamnesis] = useState<string>('');
@@ -172,8 +173,58 @@ export default function CaseWizard({ userId, userName, lang, onSuccess }: CaseWi
   };
 
   return (
-    <div className="bg-white border border-[#BDD1C6]/60 rounded-xl p-5 md:p-6 shadow-sm relative overflow-hidden text-left">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-[#004F2D]"></div>
+    <div className={`wizard-container bg-white border border-[#BDD1C6]/60 rounded-xl p-5 md:p-6 shadow-sm relative overflow-hidden text-left transition-colors duration-250 ${isDarkMode ? 'dark-wizard' : ''}`}>
+      {isDarkMode && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          .dark-wizard {
+            background-color: #101b15 !important;
+            color: #ffffff !important;
+            border-color: #22392b !important;
+          }
+          .dark-wizard p, .dark-wizard span {
+            color: #9ca3af;
+          }
+          .dark-wizard .bg-white {
+            background-color: #132219 !important;
+            color: #ffffff !important;
+            border-color: #253e2f !important;
+          }
+          .dark-wizard .bg-\\[\\#F4F8F6\\] {
+            background-color: #15241b !important;
+            border-color: #253e2f !important;
+          }
+          .dark-wizard h3, .dark-wizard h4 {
+            color: #D4AF37 !important;
+          }
+          .dark-wizard input, .dark-wizard textarea, .dark-wizard select {
+            background-color: #15241b !important;
+            color: #ffffff !important;
+            border-color: #253e2f !important;
+          }
+          .dark-wizard input::placeholder, .dark-wizard textarea::placeholder {
+            color: #4b5563 !important;
+          }
+          .dark-wizard label {
+            color: #9ca3af !important;
+          }
+          .dark-wizard .text-gray-400, .dark-wizard .text-gray-500, .dark-wizard .text-gray-600 {
+            color: #9ca3af !important;
+          }
+          .dark-wizard .border-t, .dark-wizard .border-b, .dark-wizard .border {
+            border-color: #22392b !important;
+          }
+          .dark-wizard .text-\\[\\#004F2D\\] {
+            color: #34d399 !important;
+          }
+          .dark-wizard .text-\\[\\#1A3025\\] {
+            color: #ffffff !important;
+          }
+          .dark-wizard .hover\\:bg-\\[\\#F4F8F6\\]\\/30:hover {
+            background-color: rgba(21, 36, 27, 0.4) !important;
+          }
+        `}} />
+      )}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#004F2D]'}`}></div>
 
       {/* Steps indicators tabs */}
       <div className="flex border-b border-[#E1EDE6] pb-4 mb-5 items-center justify-between text-[10px] font-mono tracking-wider font-bold text-gray-400">
