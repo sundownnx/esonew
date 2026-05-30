@@ -11,6 +11,11 @@ build:
   artifacts:
     - dist
     - node_modules
+    - package.json
+    - tsconfig.json
+    - server.ts
+    - logo.png
+    - db.json
 
 run:
   command: npm start
